@@ -19,18 +19,25 @@ def main():
     line_number = 0
 
     while True:
-        character = stdscr.getch()
+        key_value = stdscr.getkey()
 
-        if character == curses.KEY_BACKSPACE:
+        if key_value == 'KEY_BACKSPACE':
             buffer[line_number] = buffer[line_number][:-1]
-            curses.filter()
-            stdscr.erase()
+            # TODO: probably a more efficient thing to do that this.
+            stdscr.deleteln()
+            stdscr.insertln()
+            y, _ = stdscr.getyx()
+            stdscr.move(y, 0)
             stdscr.addstr(buffer[line_number])
 
-        else:
-            curses.ungetch(character)
-            key_value = stdscr.getkey()
+        elif key_value == '\n':  # TODO: docs say "(unreliable)"
+            line_number += 1
+            buffer[line_number] = ''  # TODO: need to handle later lines.
+            y, _ = stdscr.getyx()
+            stdscr.move(y + 1, 0)
+            continue
 
+        else:
             if key_value == 'q':
                 # teardown curses.
                 curses.nocbreak()
@@ -40,8 +47,11 @@ def main():
                 break
             else:
                 buffer[line_number] += key_value
-                curses.filter()
-                stdscr.erase()
+                # TODO: probably a more efficient thing to do that this.
+                stdscr.deleteln()
+                stdscr.insertln()
+                y, _ = stdscr.getyx()
+                stdscr.move(y, 0)
                 stdscr.addstr(buffer[line_number])
 
         stdscr.refresh()
