@@ -15,22 +15,34 @@ def main():
 
     stdscr.clear()
 
-    buffer = []
+    buffer = {0: ''}
+    line_number = 0
 
     while True:
-        input_ = stdscr.getkey()
+        character = stdscr.getch()
 
-        if input_ == 'q':
-            # teardown curses.
-            curses.nocbreak()
-            stdscr.keypad(False)
-            curses.echo()
-            curses.endwin()
-            break
+        if character == curses.KEY_BACKSPACE:
+            buffer[line_number] = buffer[line_number][:-1]
+            curses.filter()
+            stdscr.erase()
+            stdscr.addstr(buffer[line_number])
 
-        stdscr.addch(input_)
+        else:
+            curses.ungetch(character)
+            key_value = stdscr.getkey()
 
-        buffer.append(input_)
+            if key_value == 'q':
+                # teardown curses.
+                curses.nocbreak()
+                stdscr.keypad(False)
+                curses.echo()
+                curses.endwin()
+                break
+            else:
+                buffer[line_number] += key_value
+                curses.filter()
+                stdscr.erase()
+                stdscr.addstr(buffer[line_number])
 
         stdscr.refresh()
 
