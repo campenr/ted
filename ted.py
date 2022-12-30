@@ -1,6 +1,20 @@
 #! python3
 
 import curses
+import math
+
+
+def _setup_screen(stdscr):
+
+    max_y, max_x = stdscr.getmaxyx()
+    title = 'TED'
+    padding = ' ' * math.floor((max_x / 2) - (len(title) / 2))
+    title_bar = f'{padding}{title}{padding}'
+    diff = max_x - len(title_bar)
+    title_bar += ' ' * diff
+
+    stdscr.addstr(0, 0, title_bar, curses.A_REVERSE)
+    stdscr.refresh()
 
 
 def main():
@@ -14,6 +28,8 @@ def main():
     stdscr.keypad(True)
 
     stdscr.clear()
+
+    _setup_screen(stdscr)
 
     buffer_key = 0
     buffer_key_count = 1
