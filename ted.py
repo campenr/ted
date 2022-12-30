@@ -7,7 +7,7 @@ import math
 def _setup_screen(stdscr):
 
     max_y, max_x = stdscr.getmaxyx()
-    title = 'TED'
+    title = 'New file'
     padding = ' ' * math.floor((max_x / 2) - (len(title) / 2))
     title_bar = f'{padding}{title}{padding}'
     diff = max_x - len(title_bar)
@@ -18,14 +18,12 @@ def _setup_screen(stdscr):
 
 
 def main():
-    # just accept inputs and then write on exit...
+    res = curses.wrapper(curses_main)
+    print(res)
+    return 0
 
-    stdscr = curses.initscr()
 
-    # setup curses. Not we could use curses.wrapper but lets go low level for now to get a handle.
-    curses.noecho()
-    curses.cbreak()
-    stdscr.keypad(True)
+def curses_main(stdscr):
 
     stdscr.clear()
 
@@ -37,6 +35,9 @@ def main():
     lines = [buffer_key]
 
     while True:
+
+        stdscr.refresh()
+
         key_value = stdscr.getkey()
 
         if key_value == 'KEY_BACKSPACE':
@@ -81,11 +82,6 @@ def main():
 
         else:
             if key_value == 'q':
-                # teardown curses.
-                curses.nocbreak()
-                stdscr.keypad(False)
-                curses.echo()
-                curses.endwin()
                 break
             else:
                 buffer[buffer_key] += key_value
@@ -96,10 +92,7 @@ def main():
                 stdscr.move(y, 0)
                 stdscr.addstr(buffer[buffer_key])
 
-        stdscr.refresh()
-
-    print(buffer)
-    print(lines)
+    return buffer, lines
 
 
 if __name__ == '__main__':
