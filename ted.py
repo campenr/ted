@@ -4,58 +4,58 @@ import curses
 import math
 
 
-###########
-# actions #
-###########
+class Buffer:
 
-def backspace(stdscr, buffer, buffer_key, buffer_key_count, lines):
-    buffer[buffer_key] = buffer[buffer_key][:-1]
-    # TODO: probably a more efficient thing to do that this.
-    stdscr.deleteln()
-    stdscr.insertln()
-    y, _ = stdscr.getyx()
-    stdscr.move(y, 0)
-    stdscr.addstr(buffer[buffer_key])
+    def __init__(self):
+        self.buffer_key = 0
+        self.buffer_key_count = 1
+        self.buffer = {self.buffer_key: ''}
+        self.lines = [self.buffer_key]
 
-    return buffer, buffer_key, buffer_key_count, lines
-
-
-def move_up(stdscr, buffer, buffer_key, buffer_key_count, lines):
-    index = lines.index(buffer_key)
-    if index > 0:
-        buffer_key = lines[index - 1]
-        x = len(buffer[buffer_key])
+    def backspace(self, stdscr):
+        self.buffer[self.buffer_key] = self.buffer[self.buffer_key][:-1]
+        stdscr.deleteln()
+        stdscr.insertln()
         y, _ = stdscr.getyx()
-        stdscr.move(y - 1, x)
+        stdscr.move(y, 0)
+        stdscr.addstr(self.buffer[self.buffer_key])
 
-    return buffer, buffer_key, buffer_key_count, lines
-
-
-def move_down(stdscr, buffer, buffer_key, buffer_key_count, lines):
-    try:
-        index = lines.index(buffer_key)
-        if index < buffer_key_count:
-            buffer_key = lines[index + 1]
-            x = len(buffer[buffer_key])
+    def move_up(self, stdscr):
+        index = self.lines.index(self.buffer_key)
+        if index > 0:
+            self.buffer_key = self.lines[index - 1]
+            x = len(self.buffer[self.buffer_key])
             y, _ = stdscr.getyx()
-            stdscr.move(y + 1, x)
-    except IndexError:
-        pass  # noop
+            stdscr.move(y - 1, x)
 
-    return buffer, buffer_key, buffer_key_count, lines
+    def move_down(self, stdscr):
+        try:
+            index = self.lines.index(self.buffer_key)
+            if index < self.buffer_key_count:
+                self.buffer_key = self.lines[index + 1]
+                x = len(self.buffer[self.buffer_key])
+                y, _ = stdscr.getyx()
+                stdscr.move(y + 1, x)
+        except IndexError:
+            pass  # noop
 
+    def new_line(self, stdscr):
+        # add new empty item to self.buffer/lines state
+        self.buffer_key = self.buffer_key_count
+        self.buffer[self.buffer_key] = ''
+        self.lines.append(self.buffer_key)
+        self.buffer_key_count = self.buffer_key_count + 1
+        # update cursor
+        y, _ = stdscr.getyx()
+        stdscr.move(y + 1, 0)
 
-def new_line(stdscr, buffer, buffer_key, buffer_key_count, lines):
-    # add new empty item to buffer/lines state
-    buffer_key = buffer_key_count
-    buffer[buffer_key] = ''
-    lines.append(buffer_key)
-    buffer_key_count = buffer_key_count + 1
-    # update cursor
-    y, _ = stdscr.getyx()
-    stdscr.move(y + 1, 0)
-
-    return buffer, buffer_key, buffer_key_count, lines
+    def add_char(self, stdscr, value):
+        self.buffer[self.buffer_key] += value
+        stdscr.deleteln()
+        stdscr.insertln()
+        y, _ = stdscr.getyx()
+        stdscr.move(y, 0)
+        stdscr.addstr(self.buffer[self.buffer_key])
 
 
 ##########
@@ -80,8 +80,7 @@ def _setup_screen(stdscr):
 ########
 
 def main():
-    res = curses.wrapper(curses_main)
-    print(res)
+    curses.wrapper(curses_main)
     return 0
 
 
@@ -90,11 +89,7 @@ def curses_main(stdscr):
     stdscr.clear()
 
     _setup_screen(stdscr)
-
-    buffer_key = 0
-    buffer_key_count = 1
-    buffer = {buffer_key: ''}
-    lines = [buffer_key]
+    buffer = Buffer()
 
     while True:
 
@@ -103,28 +98,20 @@ def curses_main(stdscr):
         key_value = stdscr.getkey()
 
         if key_value == 'KEY_BACKSPACE':
-            buffer, buffer_key, buffer_key_count, lines = backspace(stdscr, buffer, buffer_key, buffer_key_count, lines)
+            buffer.backspace(stdscr)
         elif key_value == 'KEY_UP':
-            buffer, buffer_key, buffer_key_count, lines = move_up(stdscr, buffer, buffer_key, buffer_key_count, lines)
+            buffer.move_up(stdscr)
         elif key_value == 'KEY_DOWN':
-            buffer, buffer_key, buffer_key_count, lines = move_down(stdscr, buffer, buffer_key, buffer_key_count, lines)
+            buffer.move_down(stdscr)
         elif key_value == '\n':
-            buffer, buffer_key, buffer_key_count, lines = new_line(stdscr, buffer, buffer_key, buffer_key_count, lines)
+            buffer.new_line(stdscr)
             continue
 
         else:
             if key_value == 'q':
                 break
             else:
-                buffer[buffer_key] += key_value
-                # TODO: probably a more efficient thing to do that this.
-                stdscr.deleteln()
-                stdscr.insertln()
-                y, _ = stdscr.getyx()
-                stdscr.move(y, 0)
-                stdscr.addstr(buffer[buffer_key])
-
-    return buffer, lines
+                buffer.add_char(stdscr, key_value)
 
 
 if __name__ == '__main__':
