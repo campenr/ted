@@ -3,6 +3,16 @@
 import curses
 import math
 
+from functools import wraps
+
+def edit(func):
+    @wraps(func)
+    def wrapper(_, stdscr, *args, **kwargs):
+        stdscr.deleteln()
+        stdscr.insertln()
+        return func(_, stdscr, *args, **kwargs)
+    return wrapper
+
 
 class Buffer:
 
@@ -11,14 +21,6 @@ class Buffer:
         self.buffer_key_count = 1
         self.buffer = {self.buffer_key: ''}
         self.lines = [self.buffer_key]
-
-    def backspace(self, stdscr):
-        self.buffer[self.buffer_key] = self.buffer[self.buffer_key][:-1]
-        stdscr.deleteln()
-        stdscr.insertln()
-        y, _ = stdscr.getyx()
-        stdscr.move(y, 0)
-        stdscr.addstr(self.buffer[self.buffer_key])
 
     def move_up(self, stdscr):
         index = self.lines.index(self.buffer_key)
@@ -49,10 +51,16 @@ class Buffer:
         y, _ = stdscr.getyx()
         stdscr.move(y + 1, 0)
 
+    @edit
     def add_char(self, stdscr, value):
         self.buffer[self.buffer_key] += value
-        stdscr.deleteln()
-        stdscr.insertln()
+        y, _ = stdscr.getyx()
+        stdscr.move(y, 0)
+        stdscr.addstr(self.buffer[self.buffer_key])
+
+    @edit
+    def backspace(self, stdscr):
+        self.buffer[self.buffer_key] = self.buffer[self.buffer_key][:-1]
         y, _ = stdscr.getyx()
         stdscr.move(y, 0)
         stdscr.addstr(self.buffer[self.buffer_key])
