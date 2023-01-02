@@ -41,6 +41,17 @@ class Buffer:
         except IndexError:
             pass  # noop
 
+    def move_left(self, stdscr):
+        y, x = stdscr.getyx()
+        if x > 0:
+            stdscr.move(y, x - 1)
+
+    def move_right(self, stdscr):
+        y, x = stdscr.getyx()
+        max_ = len(self.buffer[self.buffer_key])
+        if x < max_:  # TODO: add maxx
+            stdscr.move(y, x + 1)
+
     def new_line(self, stdscr):
         # add new empty item to self.buffer/lines state
         self.buffer_key = self.buffer_key_count
@@ -111,6 +122,10 @@ def curses_main(stdscr):
             buffer.move_up(stdscr)
         elif key_value == 'KEY_DOWN':
             buffer.move_down(stdscr)
+        elif key_value == 'KEY_LEFT':
+            buffer.move_left(stdscr)
+        elif key_value == 'KEY_RIGHT':
+            buffer.move_right(stdscr)
         elif key_value == '\n':
             buffer.new_line(stdscr)
             continue
