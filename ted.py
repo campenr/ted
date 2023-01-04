@@ -7,10 +7,19 @@ from functools import wraps
 
 def edit(func):
     @wraps(func)
-    def wrapper(_, stdscr, *args, **kwargs):
+    def wrapper(buffer, stdscr, *args, **kwargs):
+        # calculate modified buffer result
+        ret = func(buffer, stdscr, *args, **kwargs)
+        buffer.x_pos += 1
+        # update screen with updated buffer info
         stdscr.deleteln()
         stdscr.insertln()
-        return func(_, stdscr, *args, **kwargs)
+        y, _ = stdscr.getyx()
+        stdscr.move(y, 0)
+        stdscr.addstr(buffer.buffer[buffer.buffer_key])
+        stdscr.move(y, buffer.x_pos)
+        return ret
+
     return wrapper
 
 
@@ -21,6 +30,7 @@ class Buffer:
         self.buffer_key_count = 1
         self.buffer = {self.buffer_key: ''}
         self.lines = [self.buffer_key]
+        self.x_pos = 0
 
     def move_up(self, stdscr):
         index = self.lines.index(self.buffer_key)
@@ -44,13 +54,15 @@ class Buffer:
     def move_left(self, stdscr):
         y, x = stdscr.getyx()
         if x > 0:
-            stdscr.move(y, x - 1)
+            self.x_pos -= 1
+            stdscr.move(y, self.x_pos)
 
     def move_right(self, stdscr):
         y, x = stdscr.getyx()
         max_ = len(self.buffer[self.buffer_key])
-        if x < max_:  # TODO: add maxx
-            stdscr.move(y, x + 1)
+        if x < max_:
+            self.x_pos += 1
+            stdscr.move(y, self.x_pos)
 
     def new_line(self, stdscr):
         # add new empty item to self.buffer/lines state
@@ -60,21 +72,18 @@ class Buffer:
         self.buffer_key_count = self.buffer_key_count + 1
         # update cursor
         y, _ = stdscr.getyx()
-        stdscr.move(y + 1, 0)
+        self.x_pos = 0
+        stdscr.move(y + 1, self.x_pos)
 
     @edit
     def add_char(self, stdscr, value):
-        self.buffer[self.buffer_key] += value
-        y, _ = stdscr.getyx()
-        stdscr.move(y, 0)
-        stdscr.addstr(self.buffer[self.buffer_key])
+        before = self.buffer[self.buffer_key][0:self.x_pos]
+        after = self.buffer[self.buffer_key][self.x_pos:]
+        self.buffer[self.buffer_key] = before + value + after
 
     @edit
     def backspace(self, stdscr):
         self.buffer[self.buffer_key] = self.buffer[self.buffer_key][:-1]
-        y, _ = stdscr.getyx()
-        stdscr.move(y, 0)
-        stdscr.addstr(self.buffer[self.buffer_key])
 
 
 ##########
