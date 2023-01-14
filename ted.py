@@ -115,7 +115,7 @@ def curses_main(stdscr):
 
         key_value = stdscr.getkey()
         if key_value == 'KEY_BACKSPACE':
-            buffer.backspace(stdscr)
+            buffer.backspace()
         elif key_value == 'KEY_UP':
             buffer.move_up()
         elif key_value == 'KEY_DOWN':
@@ -130,6 +130,8 @@ def curses_main(stdscr):
 
         else:
             if key_value == 'q':
+                with open('outfile', 'w') as f:
+                    f.write('\n'.join(buffer.buffer.values()))
                 break
             else:
                 buffer.add_char(key_value)
