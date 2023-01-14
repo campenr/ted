@@ -1,5 +1,5 @@
 #! python3
-
+import argparse
 import curses
 import math
 
@@ -8,9 +8,9 @@ from functools import wraps
 
 def edit(func):
     @wraps(func)
-    def wrapper(buffer, stdscr, *args, **kwargs):
+    def wrapper(buffer, *args, **kwargs):
         # calculate modified buffer result
-        ret = func(buffer, stdscr, *args, **kwargs)
+        ret = func(buffer, *args, **kwargs)
         return ret
 
     return wrapper
@@ -18,11 +18,22 @@ def edit(func):
 
 class Buffer:
 
-    def __init__(self):
+    def __init__(self, lines=None):
         self.buffer_key = 0
         self.buffer_key_count = 1
-        self.buffer = {self.buffer_key: ''}
-        self.lines = [self.buffer_key]
+        if lines is not None:
+            self.buffer = {}
+            self.lines = []
+            for line in lines:
+                self.buffer[self.buffer_key] = line
+                self.lines.append(self.buffer_key)
+                self.buffer_key += 1
+                self.buffer_key_count += 1
+            # reset buffer_key for running the main app
+            self.buffer_key = self.lines[0]
+        else:
+            self.buffer = {self.buffer_key: ''}
+            self.lines = [self.buffer_key]
         self.x_pos, self.y_pos = 0, 1  # absolute, accounting for header.
 
     def move_up(self):
@@ -94,13 +105,20 @@ def _write_header(stdscr):
 ########
 
 def main():
-    curses.wrapper(curses_main)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename')
+    args = parser.parse_args()
+    curses.wrapper(curses_main, args.filename)
     return 0
 
 
-def curses_main(stdscr):
+def curses_main(stdscr, filename=None):
 
-    buffer = Buffer()
+    if filename is not None:
+        with open(filename) as f:
+            buffer = Buffer(f.readlines())
+    else:
+        buffer = Buffer()
 
     while True:
 
@@ -108,8 +126,9 @@ def curses_main(stdscr):
         stdscr.clear()
         _write_header(stdscr)
         for line_number, line_key in enumerate(buffer.lines, start=1):  # include offset for header.
-            stdscr.move(line_number, 0)
-            stdscr.addstr(buffer.buffer[line_key])
+            if line_number < curses.LINES - 2:
+                stdscr.move(line_number, 0)
+                stdscr.addstr(buffer.buffer[line_key])
         stdscr.move(buffer.y_pos, buffer.x_pos)
         stdscr.refresh()
 
