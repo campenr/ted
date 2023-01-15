@@ -81,19 +81,24 @@ def _write_header(stdscr, filename=None):
 
     title = filename if filename is not None else NEW_FILE_NAME
     padding = ' ' * math.floor((curses.COLS / 2) - (len(title) / 2))
-    title_bar = f'{padding}{title}{padding}'
-    diff = curses.COLS - len(title_bar)
-    title_bar += ' ' * diff
+    header = f'{padding}{title}{padding}'
+    diff = curses.COLS - len(header)
+    header += ' ' * diff
 
-    stdscr.addstr(0, 0, title_bar, curses.A_REVERSE)
+    stdscr.addstr(0, 0, header, curses.A_REVERSE)
 
 
 def _write_content(stdscr, buffer):
     for line_number, line_key in enumerate(buffer.lines, start=1):  # include offset for header.
-        if line_number < curses.LINES - 2:
+        if line_number < curses.LINES - 2:  # less one line for the header and footer each.
             stdscr.move(line_number, 0)
             stdscr.addstr(buffer.buffer[line_key])
-    stdscr.move(buffer.y_pos, buffer.x_pos)
+
+
+def _write_footer(stdscr):
+    status = 'q to quit'
+    footer = f"{status}{' ' * (curses.COLS - 1 - len(status))}"
+    stdscr.addstr(53, 0, footer, curses.A_REVERSE)
 
 
 ########
@@ -122,6 +127,8 @@ def curses_main(stdscr, filename=None):
         stdscr.clear()
         _write_header(stdscr, filename)
         _write_content(stdscr, buffer)
+        _write_footer(stdscr)
+        stdscr.move(buffer.y_pos, buffer.x_pos)
         stdscr.refresh()
 
         key_value = stdscr.getkey()
@@ -138,14 +145,12 @@ def curses_main(stdscr, filename=None):
         elif key_value == '\n':
             buffer.new_line()
             continue
-
+        elif key_value == 'q':
+            with open('outfile', 'w') as f:
+                f.write('\n'.join(buffer.buffer.values()))
+            break
         else:
-            if key_value == 'q':
-                with open('outfile', 'w') as f:
-                    f.write('\n'.join(buffer.buffer.values()))
-                break
-            else:
-                buffer.add_char(key_value)
+            buffer.add_char(key_value)
 
 
 if __name__ == '__main__':
