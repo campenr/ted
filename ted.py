@@ -97,8 +97,8 @@ def _write_content(stdscr, buffer):
 
 def _write_footer(stdscr):
     status = 'q to quit'
-    footer = f"{status}{' ' * (curses.COLS - 1 - len(status))}"
-    stdscr.addstr(53, 0, footer, curses.A_REVERSE)
+    footer = f"{status}{' ' * (curses.COLS - len(status))}"
+    stdscr.insstr(curses.LINES - 1, 0, footer, curses.A_REVERSE)
 
 
 ########
