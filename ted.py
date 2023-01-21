@@ -6,6 +6,19 @@ import math
 
 class Buffer:
 
+    def __init__(self, initial=''):
+        self._content = initial
+        self._buffer = ''
+
+    def __str__(self):
+        return self._content + self._buffer
+
+    def add_char(self, value):
+        self._buffer += value
+
+
+class OldBuffer:
+
     def __init__(self, lines=None):
         self.buffer_key = 0
         self.buffer_key_count = 1
@@ -89,10 +102,11 @@ def _write_header(stdscr, filename=None):
 
 
 def _write_content(stdscr, buffer):
-    for line_number, line_key in enumerate(buffer.lines, start=1):  # include offset for header.
+    lines = str(buffer).splitlines()
+    for line_number, line in enumerate(lines, start=1):  # include offset for header.
         if line_number < curses.LINES - 2:  # less one line for the header and footer each.
             stdscr.move(line_number, 0)
-            stdscr.addstr(buffer.buffer[line_key])
+            stdscr.addstr(line)
 
 
 def _write_footer(stdscr):
@@ -128,7 +142,8 @@ def curses_main(stdscr, filename=None):
         _write_header(stdscr, filename)
         _write_content(stdscr, buffer)
         _write_footer(stdscr)
-        stdscr.move(buffer.y_pos, buffer.x_pos)
+        # stdscr.move(buffer.y_pos, buffer.x_pos)
+        stdscr.move(1, 0)
         stdscr.refresh()
 
         key_value = stdscr.getkey()
@@ -142,12 +157,9 @@ def curses_main(stdscr, filename=None):
             buffer.move_left()
         elif key_value == 'KEY_RIGHT':
             buffer.move_right()
-        elif key_value == '\n':
-            buffer.new_line()
-            continue
         elif key_value == 'q':
             with open('outfile', 'w') as f:
-                f.write('\n'.join(buffer.buffer.values()))
+                f.write(str(buffer))
             break
         else:
             buffer.add_char(key_value)

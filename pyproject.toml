@@ -1,2 +1,2 @@
 [tool.pytest.ini_options]
-python_functions = "*_test"
+python_file = "*_test"
