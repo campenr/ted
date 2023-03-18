@@ -2,19 +2,33 @@
 import argparse
 import curses
 import math
+from dataclasses import dataclass
 
 
 class Buffer:
 
+    ORIGINAL = '_original'
+    ADD = '_add'
+
     def __init__(self, initial=''):
-        self._content = initial
-        self._buffer = ''
+        self._original = initial
+        self._add = ''
+        self._pieces = []
+
+        if initial:
+            self._pieces.append(self.Piece(start=0, length=len(initial), source=self.ORIGINAL))
+
+    @dataclass
+    class Piece:
+        source: str
+        start: int
+        length: int
 
     def __str__(self):
-        return self._content + self._buffer
+        return self._original + self._add
 
     def add_char(self, value):
-        self._buffer += value
+        self._add += value
 
 
 class OldBuffer:
