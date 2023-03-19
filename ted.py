@@ -36,9 +36,13 @@ class Buffer:
     def add_char(self, value):
         self._add += value
 
-    def insert(self, text):
+    def insert(self, text, index):
+        piece = self.Piece(start=len(self._add), length=len(text), source=self.ADD)
         self._add += text
-        self._pieces.append(self.Piece(start=0, length=len(text), source=self.ADD))
+        if index == 0:  # special case that allows us to shortcut where to add the piece.
+            self._pieces.insert(0, piece)
+        else:
+            self._pieces.append(piece)
 
 
 class OldBuffer:

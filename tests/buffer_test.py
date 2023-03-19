@@ -39,17 +39,16 @@ def test_buffer_with_content_added_at_the_end_outputs_expected():
     buffer = Buffer(content)
 
     added_content = 'added content\n'
-    buffer.insert(added_content)
+    buffer.insert(added_content, len(content))
 
     assert str(buffer) == f'{content}{added_content}'
 
 
-@pytest.mark.skip('not yet implemented')
 def test_buffer_with_content_added_at_the_start_outputs_expected():
     content = 'this is test content\n'
     buffer = Buffer(content)
 
     added_content = 'added content\n'
-    buffer.insert(added_content)
+    buffer.insert(added_content, 0)
 
-    assert str(buffer) == f'{content}{added_content}'
+    assert str(buffer) == f'{added_content}{content}'
