@@ -6,6 +6,7 @@ from ted import Buffer
 # Buffer #
 #########
 
+
 def test_empty_original_no_initial_piece_entry():
     buffer = Buffer()
     assert buffer._pieces == []
@@ -15,6 +16,32 @@ def test_non_empty_original_matching_initial_piece_entry():
     content = 'this is test content\n'
     buffer = Buffer(content)
     assert buffer._pieces == [
+        Buffer.Piece(start=0, length=len(content), source=Buffer.ORIGINAL),
+    ]
+
+
+def test_non_empty_with_content_added_at_end():
+    content = 'this is test content\n'
+    buffer = Buffer(content)
+
+    added_content = 'added content\n'
+    buffer.insert(added_content, len(content))
+
+    assert buffer._pieces == [
+        Buffer.Piece(start=0, length=len(content), source=Buffer.ORIGINAL),
+        Buffer.Piece(start=0, length=len(added_content), source=Buffer.ADD),
+    ]
+
+
+def test_non_empty_with_content_added_at_start():
+    content = 'this is test content\n'
+    buffer = Buffer(content)
+
+    added_content = 'added content\n'
+    buffer.insert(added_content, 0)
+
+    assert buffer._pieces == [
+        Buffer.Piece(start=0, length=len(added_content), source=Buffer.ADD),
         Buffer.Piece(start=0, length=len(content), source=Buffer.ORIGINAL),
     ]
 
