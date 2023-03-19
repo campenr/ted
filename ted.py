@@ -25,10 +25,20 @@ class Buffer:
         length: int
 
     def __str__(self):
-        return self._original + self._add
+        text: str = ''
+        for piece in self._pieces:
+            source: str = piece.source
+            buffer: str = getattr(self, source)
+            text += buffer[piece.start:piece.start + piece.length]
+        return text
 
+    # to deprecate in favour of insert
     def add_char(self, value):
         self._add += value
+
+    def insert(self, text):
+        self._add += text
+        self._pieces.append(self.Piece(start=0, length=len(text), source=self.ADD))
 
 
 class OldBuffer:
