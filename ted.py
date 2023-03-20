@@ -5,6 +5,13 @@ import math
 from dataclasses import dataclass
 
 
+@dataclass
+class Piece:
+    source: str
+    start: int
+    length: int
+
+
 class Buffer:
 
     ORIGINAL = '_original'
@@ -16,13 +23,7 @@ class Buffer:
         self._pieces = []
 
         if initial:
-            self._pieces.append(self.Piece(start=0, length=len(initial), source=self.ORIGINAL))
-
-    @dataclass
-    class Piece:
-        source: str
-        start: int
-        length: int
+            self._pieces.append(Piece(start=0, length=len(initial), source=self.ORIGINAL))
 
     def __str__(self):
         text: str = ''
@@ -37,12 +38,48 @@ class Buffer:
         self._add += value
 
     def insert(self, text, index):
-        piece = self.Piece(start=len(self._add), length=len(text), source=self.ADD)
-        self._add += text
-        if index == 0:  # special case that allows us to shortcut where to add the piece.
+
+        # shortcut handling of the special cases of the first add, or an addition at index 0 to avoid work.
+        # if index == 0 or len(self._add) == 0:
+        if index == 0:
+            piece = Piece(start=len(self._add), length=len(text), source=self.ADD)
             self._pieces.insert(0, piece)
+
         else:
-            self._pieces.append(piece)
+            piece_index = self._find_piece(index)
+
+            if piece_index is None:
+                # no matching piece, so we need to add one at the end. special case for the first addition
+                # when it is at the end.
+                piece = Piece(start=len(self._add), length=len(text), source=self.ADD)
+                self._pieces.append(piece)
+
+            else:
+                old_piece = self._pieces[piece_index]
+                left, right = self._split_piece(old_piece, index)
+                if left.source == self.ORIGINAL:
+                    # we can't append original pieces, so we need to create an add piece.
+                    piece = Piece(start=len(self._add), length=len(text), source=self.ADD)
+                    new = [left, piece, right]
+                # else:
+                #     new = [left, right]
+                self._pieces = self._pieces[0:piece_index] + new + self._pieces[piece_index + 1:]
+
+        self._add += text
+
+    def _find_piece(self, char_index):
+        accumulator = 0
+        for piece_index, piece in enumerate(self._pieces):
+            accumulator += piece.length
+            if char_index < accumulator:
+                return piece_index
+
+    @staticmethod
+    def _split_piece(piece, index):
+        return [
+            Piece(start=piece.start, length=index, source=piece.source),
+            Piece(start=index, length=piece.length, source=piece.source),
+        ]
 
 
 class OldBuffer:
