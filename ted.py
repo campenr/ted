@@ -203,7 +203,7 @@ def curses_main(stdscr, filename=None):
 
     if filename is not None:
         with open(filename) as f:
-            buffer = Buffer(f.readlines())
+            buffer = Buffer(f.read())
     else:
         buffer = Buffer()
 
@@ -214,27 +214,27 @@ def curses_main(stdscr, filename=None):
         _write_header(stdscr, filename)
         _write_content(stdscr, buffer)
         _write_footer(stdscr)
-        # stdscr.move(buffer.y_pos, buffer.x_pos)
-        stdscr.move(1, 0)
         stdscr.refresh()
 
         key_value = stdscr.getkey()
-        if key_value == 'KEY_BACKSPACE':
-            buffer.backspace()
-        elif key_value == 'KEY_UP':
-            buffer.move_up()
-        elif key_value == 'KEY_DOWN':
-            buffer.move_down()
-        elif key_value == 'KEY_LEFT':
-            buffer.move_left()
-        elif key_value == 'KEY_RIGHT':
-            buffer.move_right()
-        elif key_value == 'q':
+        # if key_value == 'KEY_BACKSPACE':
+        #     buffer.backspace()
+        # elif key_value == 'KEY_UP':
+        #     buffer.move_up()
+        # elif key_value == 'KEY_DOWN':
+        #     buffer.move_down()
+        # elif key_value == 'KEY_LEFT':
+        #     buffer.move_left()
+        # elif key_value == 'KEY_RIGHT':
+        #     buffer.move_right()
+        if key_value == 'q':
             with open('outfile', 'w') as f:
                 f.write(str(buffer))
             break
         else:
-            buffer.add_char(key_value)
+            y, x = stdscr.getyx()
+            stdscr.move(y, x + 1)
+            buffer.insert(key_value, y + 1 * x)
 
 
 if __name__ == '__main__':
