@@ -57,6 +57,7 @@ def test_non_empty_with_content_added_at_end():
     assert buffer._piece_table == [
         Piece(start=0, length=len(content), source=Buffer.ORIGINAL),
         Piece(start=0, length=len(added_content), source=Buffer.ADD),
+        Piece(start=21, length=0, source=Buffer.ORIGINAL),  # TODO: remove pieces with zero length?
     ]
 
 
@@ -106,6 +107,25 @@ def test_non_empty_with_content_added_in_middle_of_added():
         Piece(source='_add', start=len(added_content), length=len(added_content_2)),
         Piece(source='_add', start=insertion_pos_2 - insertion_pos_1, length=len(added_content) - (insertion_pos_2 - insertion_pos_1)),
         Piece(source='_original', start=insertion_pos_1, length=len(content) - insertion_pos_1),
+    ]
+
+
+def test_non_empty_with_content_added_at_end_of_added():
+    content = 'this is test content\n'
+    buffer = Buffer(content)
+
+    added_content = 'added content\n'
+    insertion_pos_1 = 8
+    buffer.insert(added_content, insertion_pos_1)
+
+    added_content_2 = 'more things\n'
+    insertion_pos_2 = insertion_pos_1 + len(added_content)
+    buffer.insert(added_content_2, insertion_pos_2)
+
+    assert buffer._piece_table == [
+        Piece(source='_original', start=0, length=insertion_pos_1),
+        Piece(source='_add', start=0, length=len(added_content) + len(added_content_2)),
+        Piece(source='_original', start=insertion_pos_1, length=len(content) - 8),
     ]
 
 
@@ -168,3 +188,18 @@ def test_buffer_with_content_added_in_the_middle_of_added_outputs_expected():
     buffer.insert(added_content_2, insertion_pos)
 
     assert str(buffer) == 'this is admore things\nded content\ntest content\n'
+
+
+def test_buffer_with_content_added_at_end_of_added_outputs_expected():
+    content = 'this is test content\n'
+    buffer = Buffer(content)
+
+    added_content = 'added content\n'
+    insertion_pos = 8
+    buffer.insert(added_content, insertion_pos)
+
+    added_content_2 = 'more things\n'
+    insertion_pos_2 = insertion_pos + len(added_content)
+    buffer.insert(added_content_2, insertion_pos_2)
+
+    assert str(buffer) == 'this is added content\nmore things\ntest content\n'

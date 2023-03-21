@@ -57,14 +57,18 @@ class Buffer:
             else:
                 old_piece = self._piece_table[table_index]
                 left, right = self._split_piece(old_piece, piece_index)
+
                 if left.source == self.ORIGINAL:
                     # we can't append original pieces, so we need to create an add piece.
                     piece = Piece(start=len(self._add), length=len(text), source=self.ADD)
                     new = [left, piece, right]
+                    self._piece_table = self._piece_table[0:table_index] + new + self._piece_table[table_index + 1:]
+                elif piece_index == old_piece.length:
+                    old_piece.length += len(text)
                 else:
                     piece = Piece(start=old_piece.length, length=len(text), source=self.ADD)
                     new = [left, piece, right]
-                self._piece_table = self._piece_table[0:table_index] + new + self._piece_table[table_index + 1:]
+                    self._piece_table = self._piece_table[0:table_index] + new + self._piece_table[table_index + 1:]
 
         self._add += text
 
@@ -72,7 +76,7 @@ class Buffer:
         accumulator = 0
         for table_index, piece in enumerate(self._piece_table):
             accumulator += piece.length
-            if char_index < accumulator:
+            if char_index <= accumulator:
                 piece_index = piece.length - (accumulator - char_index)
                 return table_index, piece_index
         return None, None
