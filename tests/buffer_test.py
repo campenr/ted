@@ -9,13 +9,13 @@ from ted import Buffer, Piece
 
 def test_empty_original_no_initial_piece_entry():
     buffer = Buffer()
-    assert buffer._pieces == []
+    assert buffer._piece_table == []
 
 
 def test_non_empty_original_matching_initial_piece_entry():
     content = 'this is test content\n'
     buffer = Buffer(content)
-    assert buffer._pieces == [
+    assert buffer._piece_table == [
         Piece(start=0, length=len(content), source=Buffer.ORIGINAL),
     ]
 
@@ -23,7 +23,7 @@ def test_non_empty_original_matching_initial_piece_entry():
 def test_get_correct_piece_for_index_simple_case():
     content = 'this is test content\n'
     buffer = Buffer(content)
-    assert buffer._find_piece(5) == 0
+    assert buffer._get_indexes(5) == (0, 5)
 
 
 def test_get_correct_piece_for_index():
@@ -33,17 +33,17 @@ def test_get_correct_piece_for_index():
     added_content = 'added content\n'
     buffer.insert(added_content, len(content))
 
-    index = buffer._find_piece(len(content) + 2)
-    assert index == 1
+    assert buffer._get_indexes(len(content) + 2) == (1, 2)
 
 
 def test_split_piece():
     content = 'this is test content\n'
     buffer = Buffer(content)
-    pieces = buffer._split_piece(buffer._pieces[0], 5)
+    split_index = 5
+    pieces = buffer._split_piece(buffer._piece_table[0], split_index)
     assert pieces == [
-        Piece(start=0, length=5, source=Buffer.ORIGINAL),
-        Piece(start=5, length=len(content), source=Buffer.ORIGINAL),
+        Piece(start=0, length=split_index, source=Buffer.ORIGINAL),
+        Piece(start=split_index, length=len(content) - split_index, source=Buffer.ORIGINAL),
     ]
 
 
@@ -54,7 +54,7 @@ def test_non_empty_with_content_added_at_end():
     added_content = 'added content\n'
     buffer.insert(added_content, len(content))
 
-    assert buffer._pieces == [
+    assert buffer._piece_table == [
         Piece(start=0, length=len(content), source=Buffer.ORIGINAL),
         Piece(start=0, length=len(added_content), source=Buffer.ADD),
     ]
@@ -67,23 +67,45 @@ def test_non_empty_with_content_added_at_start():
     added_content = 'added content\n'
     buffer.insert(added_content, 0)
 
-    assert buffer._pieces == [
+    assert buffer._piece_table == [
         Piece(start=0, length=len(added_content), source=Buffer.ADD),
         Piece(start=0, length=len(content), source=Buffer.ORIGINAL),
     ]
 
 
-def test_non_empty_with_content_added_in_middle():
+def test_non_empty_with_content_added_in_middle_of_original():
     content = 'this is test content\n'
     buffer = Buffer(content)
 
     added_content = 'added content\n'
-    buffer.insert(added_content, 8)
+    insertion_pos = 8
+    buffer.insert(added_content, insertion_pos)
 
-    assert buffer._pieces == [
-        Piece(source='_original', start=0, length=8),
-        Piece(source='_add', start=0, length=14),
-        Piece(source='_original', start=8, length=21),
+    assert buffer._piece_table == [
+        Piece(source='_original', start=0, length=insertion_pos),
+        Piece(source='_add', start=0, length=len(added_content)),
+        Piece(source='_original', start=insertion_pos, length=len(content) - 8),
+    ]
+
+
+def test_non_empty_with_content_added_in_middle_of_added():
+    content = 'this is test content\n'
+    buffer = Buffer(content)
+
+    added_content = 'added content\n'
+    insertion_pos_1 = 8
+    buffer.insert(added_content, insertion_pos_1)
+
+    added_content_2 = 'more things\n'
+    insertion_pos_2 = 10
+    buffer.insert(added_content_2, insertion_pos_2)
+
+    assert buffer._piece_table == [
+        Piece(source='_original', start=0, length=insertion_pos_1),
+        Piece(source='_add', start=0, length=insertion_pos_2 - insertion_pos_1),
+        Piece(source='_add', start=len(added_content), length=len(added_content_2)),
+        Piece(source='_add', start=insertion_pos_2 - insertion_pos_1, length=len(added_content) - (insertion_pos_2 - insertion_pos_1)),
+        Piece(source='_original', start=insertion_pos_1, length=len(content) - insertion_pos_1),
     ]
 
 
@@ -122,7 +144,7 @@ def test_buffer_with_content_added_at_the_start_outputs_expected():
     assert str(buffer) == 'added content\nthis is test content\n'
 
 
-def test_buffer_with_content_added_in_the_middle_outputs_expected():
+def test_buffer_with_content_added_in_the_middle_of_original_outputs_expected():
     content = 'this is test content\n'
     buffer = Buffer(content)
 
@@ -130,3 +152,19 @@ def test_buffer_with_content_added_in_the_middle_outputs_expected():
     buffer.insert(added_content, 8)
 
     assert str(buffer) == 'this is added content\ntest content\n'
+
+
+def test_buffer_with_content_added_in_the_middle_of_added_outputs_expected():
+    content = 'this is test content\n'
+    buffer = Buffer(content)
+
+    added_content = 'added content\n'
+    insertion_pos = 8
+    buffer.insert(added_content, insertion_pos)
+
+    added_content_2 = 'more things\n'
+    # added_content_2 = '1'
+    insertion_pos = 10
+    buffer.insert(added_content_2, insertion_pos)
+
+    assert str(buffer) == 'this is admore things\nded content\ntest content\n'

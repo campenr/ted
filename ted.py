@@ -20,14 +20,14 @@ class Buffer:
     def __init__(self, initial=''):
         self._original = initial
         self._add = ''
-        self._pieces = []
+        self._piece_table = []
 
         if initial:
-            self._pieces.append(Piece(start=0, length=len(initial), source=self.ORIGINAL))
+            self._piece_table.append(Piece(start=0, length=len(initial), source=self.ORIGINAL))
 
     def __str__(self):
         text: str = ''
-        for piece in self._pieces:
+        for piece in self._piece_table:
             source: str = piece.source
             buffer: str = getattr(self, source)
             text += buffer[piece.start:piece.start + piece.length]
@@ -43,42 +43,45 @@ class Buffer:
         # if index == 0 or len(self._add) == 0:
         if index == 0:
             piece = Piece(start=len(self._add), length=len(text), source=self.ADD)
-            self._pieces.insert(0, piece)
+            self._piece_table.insert(0, piece)
 
         else:
-            piece_index = self._find_piece(index)
+            table_index, piece_index = self._get_indexes(index)
 
-            if piece_index is None:
+            if table_index is None:
                 # no matching piece, so we need to add one at the end. special case for the first addition
                 # when it is at the end.
                 piece = Piece(start=len(self._add), length=len(text), source=self.ADD)
-                self._pieces.append(piece)
+                self._piece_table.append(piece)
 
             else:
-                old_piece = self._pieces[piece_index]
-                left, right = self._split_piece(old_piece, index)
+                old_piece = self._piece_table[table_index]
+                left, right = self._split_piece(old_piece, piece_index)
                 if left.source == self.ORIGINAL:
                     # we can't append original pieces, so we need to create an add piece.
                     piece = Piece(start=len(self._add), length=len(text), source=self.ADD)
                     new = [left, piece, right]
-                # else:
-                #     new = [left, right]
-                self._pieces = self._pieces[0:piece_index] + new + self._pieces[piece_index + 1:]
+                else:
+                    piece = Piece(start=old_piece.length, length=len(text), source=self.ADD)
+                    new = [left, piece, right]
+                self._piece_table = self._piece_table[0:table_index] + new + self._piece_table[table_index + 1:]
 
         self._add += text
 
-    def _find_piece(self, char_index):
+    def _get_indexes(self, char_index):
         accumulator = 0
-        for piece_index, piece in enumerate(self._pieces):
+        for table_index, piece in enumerate(self._piece_table):
             accumulator += piece.length
             if char_index < accumulator:
-                return piece_index
+                piece_index = piece.length - (accumulator - char_index)
+                return table_index, piece_index
+        return None, None
 
     @staticmethod
     def _split_piece(piece, index):
         return [
             Piece(start=piece.start, length=index, source=piece.source),
-            Piece(start=index, length=piece.length, source=piece.source),
+            Piece(start=index, length=piece.length - index, source=piece.source),
         ]
 
 
