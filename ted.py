@@ -89,70 +89,17 @@ class Buffer:
         ]
 
 
-class OldBuffer:
+class File:
 
-    def __init__(self, lines=None):
-        self.buffer_key = 0
-        self.buffer_key_count = 1
-        if lines is not None:
-            self.buffer = {}
-            self.lines = []
-            for line in lines:
-                self.buffer[self.buffer_key] = line
-                self.lines.append(self.buffer_key)
-                self.buffer_key += 1
-                self.buffer_key_count += 1
-            # reset buffer_key for running the main app
-            self.buffer_key = self.lines[0]
-        else:
-            self.buffer = {self.buffer_key: ''}
-            self.lines = [self.buffer_key]
-        self.x_pos, self.y_pos = 0, 1  # absolute, accounting for header.
-
-    def move_up(self):
-        current_line = self.lines.index(self.buffer_key)
-        if current_line > 0:
-            self.buffer_key = self.lines[current_line - 1]
-            line_length = len(self.buffer[self.buffer_key])
-            self.x_pos = line_length if self.x_pos > line_length else self.x_pos
-            self.y_pos -= 1
-
-    def move_down(self):
-        current_line = self.lines.index(self.buffer_key)
-        if current_line < self.buffer_key_count - 1:
-            self.buffer_key = self.lines[current_line + 1]
-            line_length = len(self.buffer[self.buffer_key])
-            self.x_pos = line_length if self.x_pos > line_length else self.x_pos
-            self.y_pos += 1
+    def __init__(self):
+        self.line_pos = 0
+        self.char_pos = 0
 
     def move_left(self):
-        if self.x_pos > 0:
-            self.x_pos -= 1
+        self.char_pos -= 1
 
     def move_right(self):
-        line_length = len(self.buffer[self.buffer_key])
-        if self.x_pos < line_length:
-            self.x_pos += 1
-
-    def new_line(self):
-        # add new empty item to self.buffer/lines state
-        self.buffer_key = self.buffer_key_count
-        self.buffer[self.buffer_key] = ''
-        self.lines.append(self.buffer_key)
-        self.buffer_key_count += 1
-        # update cursor
-        self.x_pos = 0
-        self.y_pos += 1
-
-    def add_char(self, value):
-        before = self.buffer[self.buffer_key][0:self.x_pos]
-        after = self.buffer[self.buffer_key][self.x_pos:]
-        self.buffer[self.buffer_key] = before + value + after
-        self.x_pos += 1
-
-    def backspace(self):
-        self.buffer[self.buffer_key] = self.buffer[self.buffer_key][:-1]
-        self.x_pos += 1
+        self.char_pos += 1
 
 
 ##########
@@ -207,6 +154,9 @@ def curses_main(stdscr, filename=None):
     else:
         buffer = Buffer()
 
+    file = File()
+    header_offset = 1
+
     while True:
 
         # draw
@@ -214,27 +164,22 @@ def curses_main(stdscr, filename=None):
         _write_header(stdscr, filename)
         _write_content(stdscr, buffer)
         _write_footer(stdscr)
+        stdscr.move(file.line_pos + header_offset, file.char_pos)
         stdscr.refresh()
 
         key_value = stdscr.getkey()
-        # if key_value == 'KEY_BACKSPACE':
-        #     buffer.backspace()
-        # elif key_value == 'KEY_UP':
-        #     buffer.move_up()
-        # elif key_value == 'KEY_DOWN':
-        #     buffer.move_down()
-        # elif key_value == 'KEY_LEFT':
-        #     buffer.move_left()
-        # elif key_value == 'KEY_RIGHT':
-        #     buffer.move_right()
-        if key_value == 'q':
+
+        if key_value == 'KEY_LEFT':
+            file.move_left()
+        elif key_value == 'KEY_RIGHT':
+            file.move_right()
+        elif key_value == 'q':
             with open('outfile', 'w') as f:
                 f.write(str(buffer))
             break
         else:
-            y, x = stdscr.getyx()
-            stdscr.move(y, x + 1)
-            buffer.insert(key_value, y + 1 * x)
+            file.move_right()
+            buffer.insert(key_value, file.line_pos + header_offset * file.char_pos)
 
 
 if __name__ == '__main__':
