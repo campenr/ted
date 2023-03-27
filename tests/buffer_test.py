@@ -129,6 +129,17 @@ def test_non_empty_with_content_added_at_end_of_added():
     ]
 
 
+########
+# File #
+########
+
+def test_get_buffer_location_from_file_position():
+    content = 'this is\nmultiline\ntest content\n'
+    buffer = Buffer(content)
+    line_pos, char_pos = 1, 2
+    assert buffer.get_char_index(line_pos, char_pos) == 9
+
+
 ##########
 # Output #
 ##########

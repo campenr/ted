@@ -27,11 +27,15 @@ class Buffer:
 
     def __str__(self):
         text: str = ''
+        for chunk in self.get_string_chunks():
+            text += chunk
+        return text
+
+    def get_string_chunks(self):
         for piece in self._piece_table:
             source: str = piece.source
             buffer: str = getattr(self, source)
-            text += buffer[piece.start:piece.start + piece.length]
-        return text
+            yield buffer[piece.start:piece.start + piece.length]
 
     # to deprecate in favour of insert
     def add_char(self, value):
@@ -87,6 +91,24 @@ class Buffer:
             Piece(start=piece.start, length=index, source=piece.source),
             Piece(start=index, length=piece.length - index, source=piece.source),
         ]
+
+    def get_char_index(self, line_pos, char_pos):
+        # iterates the full file string, one piece chunk at a time, until we match the target file location
+        # based on newlines within that chunk. Less performant the further into the file we are.
+        # probably a better way to do this.
+        pos_accumulator = 0
+        line_accumulator = 0
+        for chunk in self.get_string_chunks():
+            chunk_lines = chunk.split('\n')
+            for line_index, line in enumerate(chunk_lines):
+                for char_index, char in enumerate(line):
+                    if (
+                        line_accumulator == line_pos and
+                        char_index == char_pos
+                    ):
+                        return pos_accumulator
+                    pos_accumulator += 1
+                line_accumulator += 1
 
 
 class File:
