@@ -109,6 +109,8 @@ class Buffer:
                         return pos_accumulator
                     pos_accumulator += 1
                 line_accumulator += 1
+        # if none matched then assume start of the file.
+        return 0
 
 
 class File:
@@ -118,10 +120,15 @@ class File:
         self.char_pos = 0
 
     def move_left(self):
-        self.char_pos -= 1
+        if self.char_pos > 0:
+            self.char_pos -= 1
 
     def move_right(self):
         self.char_pos += 1
+
+    def move_down(self):
+        self.line_pos += 1
+        self.char_pos = 0
 
 
 ##########
@@ -184,7 +191,7 @@ def curses_main(stdscr, filename=None):
         # draw
         stdscr.clear()
         _write_header(stdscr, filename)
-        _write_content(stdscr, buffer)
+        _write_content(stdscr, str(buffer))
         _write_footer(stdscr)
         stdscr.move(file.line_pos + header_offset, file.char_pos)
         stdscr.refresh()
@@ -199,9 +206,12 @@ def curses_main(stdscr, filename=None):
             with open('outfile', 'w') as f:
                 f.write(str(buffer))
             break
+        elif key_value == '\n':
+            file.move_down()
+            buffer.insert(key_value, file.char_pos)
         else:
             file.move_right()
-            buffer.insert(key_value, file.line_pos + header_offset * file.char_pos)
+            buffer.insert(key_value, file.char_pos)
 
 
 if __name__ == '__main__':

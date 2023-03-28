@@ -134,10 +134,31 @@ def test_non_empty_with_content_added_at_end_of_added():
 ########
 
 def test_get_buffer_location_from_file_position():
-    content = 'this is\nmultiline\ntest content\n'
+    content = 'this is\nmultiline\ntest content'
     buffer = Buffer(content)
     line_pos, char_pos = 1, 2
     assert buffer.get_char_index(line_pos, char_pos) == 9
+
+
+def test_get_buffer_location_from_file_position_2():
+    content = 'this is\nmultiline\ntest content'
+    buffer = Buffer(content)
+    line_pos, char_pos = 0, 2
+    assert buffer.get_char_index(line_pos, char_pos) == 2
+
+
+def test_get_buffer_location_from_file_position_2():
+    content = 'this is\nmultiline\ntest content'
+    buffer = Buffer(content)
+    line_pos, char_pos = 2, 2
+    assert buffer.get_char_index(line_pos, char_pos) == 18
+
+
+def test_get_buffer_location_from_file_position_2():
+    content = 'this is all on one line'
+    buffer = Buffer(content)
+    line_pos, char_pos = 0, 2
+    assert buffer.get_char_index(line_pos, char_pos) == 2
 
 
 ##########
