@@ -3,6 +3,7 @@ import argparse
 import curses
 import math
 from dataclasses import dataclass
+import logging
 
 
 @dataclass
@@ -74,15 +75,20 @@ class Buffer:
                     new = [left, piece, right]
                     self._piece_table = self._piece_table[0:table_index] + new + self._piece_table[table_index + 1:]
 
+        logging.debug(f'buffer.insert : piece_table={self._piece_table}')
         self._add += text
+        logging.debug(f'buffer.insert : add={self._add}')
 
     def _get_indexes(self, char_index):
+        logging.debug(f'buffer._get_indexes : char_index={char_index} piece_table={self._piece_table}')
         accumulator = 0
         for table_index, piece in enumerate(self._piece_table):
             accumulator += piece.length
-            if char_index <= accumulator:
+            if char_index < accumulator:
                 piece_index = piece.length - (accumulator - char_index)
+                logging.debug(f'buffer._get_indexes : table_index={table_index} piece_index={piece_index}')
                 return table_index, piece_index
+        logging.debug(f'buffer._get_indexes : table_index={None} piece_index={None}')
         return None, None
 
     @staticmethod
@@ -106,10 +112,12 @@ class Buffer:
                         line_accumulator == line_pos and
                         char_index == char_pos
                     ):
+                        logging.debug(f'buffer.get_char_index : line_pos={line_pos} pos_accumulator={pos_accumulator} char_pos={char_pos} line_accumulator={line_accumulator}')
                         return pos_accumulator
                     pos_accumulator += 1
                 line_accumulator += 1
         # if none matched then assume start of the file.
+        logging.debug(f'buffer.get_char_index : line_pos={line_pos} pos_accumulator={pos_accumulator} char_pos={char_pos} line_accumulator={line_accumulator}')
         return 0
 
 
@@ -122,13 +130,16 @@ class File:
     def move_left(self):
         if self.char_pos > 0:
             self.char_pos -= 1
+        logging.debug(f'file.move_left : line_pos={self.line_pos} char_pos={self.char_pos}')
 
     def move_right(self):
         self.char_pos += 1
+        logging.debug(f'file.move_right : line_pos={self.line_pos} char_pos={self.char_pos}')
 
     def move_down(self):
         self.line_pos += 1
         self.char_pos = 0
+        logging.debug(f'file.move_down : line_pos={self.line_pos} char_pos={self.char_pos}')
 
 
 ##########
@@ -177,6 +188,8 @@ def main():
 
 def curses_main(stdscr, filename=None):
 
+    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
+
     if filename is not None:
         with open(filename) as f:
             buffer = Buffer(f.read())
@@ -211,7 +224,8 @@ def curses_main(stdscr, filename=None):
             buffer.insert(key_value, file.char_pos)
         else:
             file.move_right()
-            buffer.insert(key_value, file.char_pos)
+            # buffer.insert(key_value, file.char_pos - 1)
+            buffer.insert(key_value, buffer.get_char_index(file.line_pos, file.char_pos) - 1)
 
 
 if __name__ == '__main__':
