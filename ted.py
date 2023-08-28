@@ -97,6 +97,11 @@ class FilePosition:
     x: int
     y: int
 
+    @classmethod
+    def origin(cls):
+        """Convenience method for creating a new instance at the origin."""
+        return cls(x=0, y=0)
+
 
 class File:
 
@@ -119,6 +124,31 @@ class File:
     @line_pos.setter
     def line_pos(self, value: int) -> None:
         self._file_position.y = value
+
+    def get_char(self):
+        for index, line in enumerate(str(self._buffer).splitlines()):
+            if index == self.line_pos:
+                return line[self.char_pos]
+
+    def write_char(self, char):
+
+        def accumulate():
+            accumulator = 0
+            for line_num, line in enumerate(str(self._buffer).splitlines()):
+                for char_num, char_ in enumerate(line + '\n'):
+                    if line_num == self.line_pos and char_num == self.char_pos:
+                        break
+                    accumulator += 1
+            return accumulator
+
+        index = accumulate()
+
+        self._buffer.insert(char, index)
+        if char == '\n':
+            self.char_pos = 0
+            self.move_down()
+        else:
+            self.move_right()
 
     def move_left(self):
         if self.char_pos > 0:
@@ -194,7 +224,7 @@ def curses_main(stdscr, filename=None):
     else:
         buffer = Buffer()
 
-    file = File(buffer)
+    file = File(buffer, FilePosition.origin())
     header_offset = 1
 
     while True:
@@ -213,13 +243,16 @@ def curses_main(stdscr, filename=None):
             file.move_left()
         elif key_value == 'KEY_RIGHT':
             file.move_right()
+        elif key_value == 'KEY_UP':
+            file.move_up()
+        elif key_value == 'KEY_DOWN':
+            file.move_down()
         elif key_value == 'q':
             with open('outfile', 'w') as f:
                 f.write(str(buffer))
             break
         else:
-            file.move_right()
-            buffer.insert(key_value, file.line_pos + header_offset * file.char_pos)
+            file.write_char(key_value)
 
 
 if __name__ == '__main__':
