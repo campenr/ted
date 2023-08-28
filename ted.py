@@ -33,6 +33,9 @@ class Buffer:
             text += buffer[piece.start:piece.start + piece.length]
         return text
 
+    def __len__(self):
+        return len(str(self))
+
     # to deprecate in favour of insert
     def add_char(self, value):
         self._add += value
@@ -89,17 +92,54 @@ class Buffer:
         ]
 
 
+@dataclass
+class FilePosition:
+    x: int
+    y: int
+
+
 class File:
 
-    def __init__(self):
-        self.line_pos = 0
-        self.char_pos = 0
+    def __init__(self, buffer: Buffer, file_position: FilePosition) -> None:
+        self._buffer = buffer
+        self._file_position = file_position
+
+    @property
+    def char_pos(self) -> int:
+        return self._file_position.x
+
+    @char_pos.setter
+    def char_pos(self, value: int) -> None:
+        self._file_position.x = value
+
+    @property
+    def line_pos(self) -> int:
+        return self._file_position.y
+
+    @line_pos.setter
+    def line_pos(self, value: int) -> None:
+        self._file_position.y = value
 
     def move_left(self):
-        self.char_pos -= 1
+        if self.char_pos > 0:
+            self.char_pos -= 1
 
     def move_right(self):
-        self.char_pos += 1
+        if self.char_pos < len(self._buffer):
+            self.char_pos += 1
+
+    def move_down(self):
+        lines = 0
+        for char in str(self._buffer):
+            if char == '\n':
+                lines += 1
+
+        if self.line_pos < lines:
+            self.line_pos += 1
+
+    def move_up(self):
+        if self.line_pos > 0:
+            self.line_pos -= 1
 
 
 ##########
@@ -154,7 +194,7 @@ def curses_main(stdscr, filename=None):
     else:
         buffer = Buffer()
 
-    file = File()
+    file = File(buffer)
     header_offset = 1
 
     while True:
