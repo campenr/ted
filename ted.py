@@ -1,8 +1,12 @@
 #! python3
 import argparse
 import curses
+import logging
 import math
 from dataclasses import dataclass
+
+
+logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
 
 
 @dataclass
@@ -99,31 +103,31 @@ class FilePosition:
 
     @classmethod
     def origin(cls):
-        """Convenience method for creating a new instance at the origin."""
+        """Convenience method for creating a new instance at the file origin."""
         return cls(x=0, y=0)
 
 
 class File:
 
-    def __init__(self, buffer: Buffer, file_position: FilePosition) -> None:
+    def __init__(self, buffer: Buffer, position: FilePosition) -> None:
         self._buffer = buffer
-        self._file_position = file_position
+        self._position = position
 
     @property
     def char_pos(self) -> int:
-        return self._file_position.x
+        return self._position.x
 
     @char_pos.setter
     def char_pos(self, value: int) -> None:
-        self._file_position.x = value
+        self._position.x = value
 
     @property
     def line_pos(self) -> int:
-        return self._file_position.y
+        return self._position.y
 
     @line_pos.setter
     def line_pos(self, value: int) -> None:
-        self._file_position.y = value
+        self._position.y = value
 
     def get_char(self):
         for index, line in enumerate(str(self._buffer).splitlines()):
@@ -153,23 +157,35 @@ class File:
     def move_left(self):
         if self.char_pos > 0:
             self.char_pos -= 1
+        logging.debug(f'file.move_left : {self._position}')
 
     def move_right(self):
-        if self.char_pos < len(self._buffer):
-            self.char_pos += 1
+        for line_num, line in enumerate(str(self._buffer).splitlines()):
+            if line_num == self.line_pos:
+                if self.char_pos < len(line):
+                    self.char_pos += 1
+        logging.debug(f'file.move_right : {self._position}')
 
     def move_down(self):
         lines = 0
         for char in str(self._buffer):
             if char == '\n':
                 lines += 1
-
         if self.line_pos < lines:
             self.line_pos += 1
+
+        for line_num, line in enumerate(str(self._buffer).splitlines()):
+            if line_num == self.line_pos:
+                line_len = len(line)
+                if self.char_pos > line_len:
+                    self.char_pos = line_len
+
+        logging.debug(f'file.move_down : {self._position}')
 
     def move_up(self):
         if self.line_pos > 0:
             self.line_pos -= 1
+        logging.debug(f'file.move_up : {self._position}')
 
 
 ##########
